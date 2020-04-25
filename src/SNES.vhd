@@ -8,98 +8,100 @@ use IEEE.STD_LOGIC_TEXTIO.all;
 
 entity SNES is
 	port(
-		MCLK			: in std_logic;
-		DSPCLK		: in std_logic;
+		mclk			: in std_logic;
+		dspclk		: in std_logic;
 		
-		RST_N			: in std_logic;
-		ENABLE		: in std_logic;
-		PAL			: in std_logic;
-		BLEND			: in std_logic;
+		rst_n			: in std_logic;
+		enable		: in std_logic;
+		pal			: in std_logic;
+		blend			: in std_logic;
 		
-		CA       	: out std_logic_vector(23 downto 0);
-		CPURD_N		: out std_logic;
-		CPUWR_N		: out std_logic;
+		ca       	: out std_logic_vector(23 downto 0);
+		cpurd_n		: out std_logic;
+		cpuwr_n		: out std_logic;
 		
-		PA				: out std_logic_vector(7 downto 0);
-		PARD_N		: out std_logic;
-		PAWR_N		: out std_logic;
-		DI				: in std_logic_vector(7 downto 0);
-		DO				: out std_logic_vector(7 downto 0);
+		pa				: out std_logic_vector(7 downto 0);
+		pard_n		: out std_logic;
+		pawr_n		: out std_logic;
+		di				: in std_logic_vector(7 downto 0);
+		do				: out std_logic_vector(7 downto 0);
 		
-		RAMSEL_N		: out std_logic;
-		ROMSEL_N		: out std_logic;
+		ramsel_n		: out std_logic;
+		romsel_n		: out std_logic;
 		
-		SYSCLKF_CE	: out std_logic;
-		SYSCLKR_CE	: out std_logic;
-		REFRESH		: out std_logic;
+		sysclkf_ce	: out std_logic;
+		sysclkr_ce	: out std_logic;
+		refresh		: out std_logic;
 		
-		IRQ_N			: in std_logic;
+		irq_n			: in std_logic;
 		
-		WSRAM_ADDR	: out std_logic_vector(16 downto 0);
-		WSRAM_D		: out std_logic_vector(7 downto 0);
-		WSRAM_Q		: in  std_logic_vector(7 downto 0);
-		WSRAM_CE_N	: out std_logic;
-		WSRAM_OE_N	: out std_logic;
-		WSRAM_WE_N	: out std_logic;
+		wsram_addr	: out std_logic_vector(16 downto 0);
+		wsram_d		: out std_logic_vector(7 downto 0);
+		wsram_q		: in  std_logic_vector(7 downto 0);
+		wsram_ce_n	: out std_logic;
+		wsram_oe_n	: out std_logic;
+		wsram_we_n	: out std_logic;
 		
-		VRAM_ADDRA	: out std_logic_vector(15 downto 0);
-		VRAM_ADDRB	: out std_logic_vector(15 downto 0);
-		VRAM_DAI		: in std_logic_vector(7 downto 0);
-		VRAM_DBI		: in std_logic_vector(7 downto 0);
-		VRAM_DAO		: out std_logic_vector(7 downto 0);
-		VRAM_DBO		: out std_logic_vector(7 downto 0);
-		VRAM_WRA_N	: out std_logic;
-		VRAM_WRB_N	: out std_logic;
-		VRAM_RD_N	: out std_logic;
+		vram_addra	: out std_logic_vector(15 downto 0);
+		vram_addrb	: out std_logic_vector(15 downto 0);
+		vram_dai		: in std_logic_vector(7 downto 0);
+		vram_dbi		: in std_logic_vector(7 downto 0);
+		vram_dao		: out std_logic_vector(7 downto 0);
+		vram_dbo		: out std_logic_vector(7 downto 0);
+		vram_wra_n	: out std_logic;
+		vram_wrb_n	: out std_logic;
+		vram_rd_n	: out std_logic;
 		
-		ARAM_ADDR	: out std_logic_vector(15 downto 0);
-		ARAM_D		: out std_logic_vector(7 downto 0);
-		ARAM_Q		: in  std_logic_vector(7 downto 0);
-		ARAM_CE_N	: out std_logic;
-		ARAM_OE_N	: out std_logic;
-		ARAM_WE_N	: out std_logic;
+		aram_addr	: out std_logic_vector(15 downto 0);
+		aram_d		: out std_logic_vector(7 downto 0);
+		aram_q		: in  std_logic_vector(7 downto 0);
+		aram_ce_n	: out std_logic;
+		aram_oe_n	: out std_logic;
+		aram_we_n	: out std_logic;
 		
-		HIGH_RES		: out std_logic;
-		FIELD_OUT	: out std_logic;
-		INTERLACE	: out std_logic;
-		V224_MODE	: out std_logic;
-		DOTCLK		: out std_logic;
+		high_res		: out std_logic;
+		field_out	: out std_logic;
+		interlace	: out std_logic;
+		v224_mode	: out std_logic;
+		dotclk		: out std_logic;
 
-		RGB_OUT 		: out std_logic_vector(23 downto 0);
-		HDE			: out std_logic;
-		VDE			: out std_logic;
-		HSYNC			: out std_logic;
-		VSYNC			: out std_logic;
+		rgb_out 		: out std_logic_vector(23 downto 0);
+		hde			: out std_logic;
+		vde			: out std_logic;
+		hsync			: out std_logic;
+		vsync			: out std_logic;
 
-		JOY1_DI		: in std_logic_vector(1 downto 0);
-		JOY2_DI		: in std_logic_vector(1 downto 0);
-		JOY_STRB		: out std_logic;
-		JOY1_CLK		: out std_logic;
-		JOY2_CLK		: out std_logic;
-		JOY1_P6		: out std_logic;
-		JOY2_P6		: out std_logic;
-		JOY2_P6_in	: in std_logic;
+		joy1_di		: in std_logic_vector(1 downto 0);
+		joy2_di		: in std_logic_vector(1 downto 0);
+		joy_strb		: out std_logic;
+		joy1_clk		: out std_logic;
+		joy2_clk		: out std_logic;
+		joy1_p6		: out std_logic;
+		joy2_p6		: out std_logic;
+		joy2_p6_in	: in std_logic;
 
-		LRCK			: out std_logic;
-		BCK			: out std_logic;
-		SDAT			: out std_logic;
+		lrck			: out std_logic;
+		bck			: out std_logic;
+		sdat			: out std_logic;
 
-		DBG_SEL		: in std_logic_vector(7 downto 0);
-		DBG_REG		: in std_logic_vector(7 downto 0);
-		DBG_REG_WR	: in std_logic;
-		DBG_DAT_IN	: in std_logic_vector(7 downto 0);
-		DBG_DAT_OUT	: out std_logic_vector(7 downto 0);
-		DBG_BREAK	: out std_logic;
+		dbg_sel		: in std_logic_vector(7 downto 0);
+		dbg_reg		: in std_logic_vector(7 downto 0);
+		dbg_reg_wr	: in std_logic;
+		dbg_dat_in	: in std_logic_vector(7 downto 0);
+		dbg_dat_out	: out std_logic_vector(7 downto 0);
+		dbg_break	: out std_logic;
 
-		GG_EN			: in std_logic;
-		GG_CODE		: in std_logic_vector(128 downto 0);
-		GG_RESET		: in std_logic;
-		GG_AVAILABLE: out std_logic;
+		gg_en			: in std_logic;
+		gg_code		: in std_logic_vector(128 downto 0);
+		gg_reset		: in std_logic;
+		gg_available: out std_logic;
 		
-		TURBO			: in std_logic;
+		turbo			: in std_logic;
 
-		AUDIO_L		: out std_logic_vector(15 downto 0);
-		AUDIO_R		: out std_logic_vector(15 downto 0)
+		audio_l		: out std_logic_vector(15 downto 0);
+		audio_r		: out std_logic_vector(15 downto 0);
+
+		trace_addr	: out std_logic_vector(23 downto 0)
 	);
 end SNES;
 
@@ -156,45 +158,45 @@ architecture rtl of SNES is
 	signal CPU_BRK, SMP_BRK, PPU_DBG_BRK	: std_logic;
 	signal CPU_DBG_WR, WRAM_DBG_WR, SPC700_DAT_WR, SMP_DAT_WR, PPU_DBG_WR, DSP_DBG_WR : std_logic;
 
-	component CODES is
-		generic(
-			ADDR_WIDTH  : in integer := 16;
-			DATA_WIDTH  : in integer := 8
-		);
-		port(
-			clk         : in  std_logic;
-			reset       : in  std_logic;
-			enable      : in  std_logic;
-			addr_in     : in  std_logic_vector(23 downto 0);
-			data_in     : in  std_logic_vector(7 downto 0);
-			code        : in  std_logic_vector(128 downto 0);
-			available   : out std_logic;
-			genie_ovr   : out std_logic;
-			genie_data  : out std_logic_vector(7 downto 0)
-		);
-	end component;
+	--component CODES is
+	--	generic(
+	--		ADDR_WIDTH  : in integer := 16;
+	--		DATA_WIDTH  : in integer := 8
+	--	);
+	--	port(
+	--		clk         : in  std_logic;
+	--		reset       : in  std_logic;
+	--		enable      : in  std_logic;
+	--		addr_in     : in  std_logic_vector(23 downto 0);
+	--		data_in     : in  std_logic_vector(7 downto 0);
+	--		code        : in  std_logic_vector(128 downto 0);
+	--		available   : out std_logic;
+	--		genie_ovr   : out std_logic;
+	--		genie_data  : out std_logic_vector(7 downto 0)
+	--	);
+	--end component;
 
 begin
 
 	-- Game Genie
-	GAMEGENIE : component CODES
-	generic map(
-		ADDR_WIDTH => 24,
-		DATA_WIDTH => 8
-	)
-	port map(
-		clk => MCLK,
-		reset => GG_RESET,
-		enable => not GG_EN,
-		addr_in => INT_CA,
-		data_in => CPU_DO,
-		code => GG_CODE,
-		available => GG_AVAILABLE,
-		genie_ovr => GENIE,
-		genie_data => GENIE_DO
-	);
+	--GAMEGENIE : component CODES
+	--generic map(
+	--	ADDR_WIDTH => 24,
+	--	DATA_WIDTH => 8
+	--)
+	--port map(
+	--	clk => MCLK,
+	--	reset => GG_RESET,
+	--	enable => not GG_EN,
+	--	addr_in => INT_CA,
+	--	data_in => CPU_DO,
+	--	code => GG_CODE,
+	--	available => GG_AVAILABLE,
+	--	genie_ovr => GENIE,
+	--	genie_data => GENIE_DO
+	--);
 	
-	GENIE_DI <= GENIE_DO when GENIE = '1' else CPU_DI;
+	GENIE_DI <= CPU_DI;
 
 	-- CPU
 	CPU : entity work.SCPU
@@ -242,6 +244,8 @@ begin
 		DBG_CPU_DAT => DBG_CPU_DAT,
 		DBG_CPU_WR 	=> CPU_DBG_WR
 	);
+
+	trace_addr <= INT_CA;
 
 	BUSA_SEL <= '1' when INT_CA(22) = '0' and INT_CA(15 downto 8) /= x"21" else
 					'1' when INT_CA(23 downto 16) >= x"40" and INT_CA(23 downto 16) <= x"7D" else 

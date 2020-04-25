@@ -1,0 +1,25 @@
+read_verilog ../mem/dp16k_wrapper.v ../mem/dpram_verilog.v ../mem/dpram_dif_ppu.v ../mem/sprom_verilog.v
+ghdl --ieee=synopsys -fexplicit -frelaxed-rules --std=08 \
+	../../src/65C816/P65816_pkg.vhd ../../src/65C816/BCDAdder.vhd ../../src/65C816/AddrGen.vhd ../../src/65C816/AddSubBCD.vhd ../../src/65C816/ALU.vhd ../../src/65C816/MCode.vhd ../../src/65C816/P65C816.vhd \
+	../../src/SPC700/SPC700_pkg.vhd ../../src/SPC700/BCDAdj.vhd ../../src/SPC700/AddrGen.vhd ../../src/SPC700/AddSub.vhd ../../src/SPC700/ALU.vhd ../../src/SPC700/MCode.vhd ../../src/SPC700/MulDiv.vhd ../../src/SPC700/SPC700.vhd \
+	../mem/spram.vhd \
+	../../src/CEGen.vhd ../../src/CPU.vhd ../../src/DSP_PKG.vhd ../../src/DSP.vhd ../../src/PPU_PKG.vhd ../../src/PPU.vhd ../../src/SMP.vhd ../../src/SWRAM.vhd ../../src/SNES.vhd \
+	-e SNES
+delete cegen
+ghdl --ieee=synopsys -fexplicit -frelaxed-rules --std=08 \
+	../../src/chip/DSP/OBC1.vhd \
+	../../src/chip/SRTC.vhd \
+	../../src/chip/DSP/DSPn.vhd \
+	../../src/chip/DSP/DSP_LHRomMap.vhd \
+	-e DSP_LHRomMap
+read_verilog ../../src/main.v
+read_verilog ../top/ulx3s_top.v ../top/trace.v ../video/tmds_encoder.v ../../sys/sigma_delta_dac.v ../video/vga2dvid.v ../video/video_retimer.v ../top/uart_tx.v ../top/spigameload.v ../top/flashmem.v ../pll/pll_25_100.v ../pll/pll_dvi.v ../pll/pll_sys.v ../pll/ecp5_fracdiv.v
+read_verilog -sv ../../sdram.sv
+
+synth_ecp5 -abc9 -top top -nowidelut -run :check
+
+stat
+check -noinit
+
+write_json snes.json
+

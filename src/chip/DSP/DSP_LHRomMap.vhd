@@ -8,57 +8,57 @@ use IEEE.STD_LOGIC_TEXTIO.all;
 
 entity DSP_LHRomMap is
 	generic (
-		USE_DSPn	: in std_logic := '1'
+		USE_DSPn	: in std_logic := '0'
 	);
 	port(
-		MCLK			: in std_logic;
-		RST_N			: in std_logic;
-		ENABLE		: in std_logic := '1';
+		mclk			: in std_logic;
+		rst_n			: in std_logic;
+		enable		: in std_logic := '1';
 
-		CA   			: in std_logic_vector(23 downto 0);
-		DI				: in std_logic_vector(7 downto 0);
-		DO				: out std_logic_vector(7 downto 0);
-		CPURD_N		: in std_logic;
-		CPUWR_N		: in std_logic;
+		ca   			: in std_logic_vector(23 downto 0);
+		di				: in std_logic_vector(7 downto 0);
+		do				: out std_logic_vector(7 downto 0);
+		cpurd_n		: in std_logic;
+		cpuwr_n		: in std_logic;
 		
-		PA				: in std_logic_vector(7 downto 0);
-		PARD_N		: in std_logic;
-		PAWR_N		: in std_logic;
+		pa				: in std_logic_vector(7 downto 0);
+		pard_n		: in std_logic;
+		pawr_n		: in std_logic;
 		
-		ROMSEL_N		: in std_logic;
-		RAMSEL_N		: in std_logic;
+		romsel_n		: in std_logic;
+		ramsel_n		: in std_logic;
 		
-		SYSCLKF_CE	: in std_logic;
-		SYSCLKR_CE	: in std_logic;
-		REFRESH		: in std_logic;
+		sysclkf_ce	: in std_logic;
+		sysclkr_ce	: in std_logic;
+		refresh		: in std_logic;
 		
-		IRQ_N			: out std_logic;
+		irq_n			: out std_logic;
 
-		ROM_ADDR		: out std_logic_vector(23 downto 0);
-		ROM_Q			: in  std_logic_vector(15 downto 0);
-		ROM_CE_N		: out std_logic;
-		ROM_OE_N		: out std_logic;
-		ROM_WORD		: out std_logic;
+		rom_addr		: out std_logic_vector(23 downto 0);
+		rom_q			: in  std_logic_vector(15 downto 0);
+		rom_ce_n		: out std_logic;
+		rom_oe_n		: out std_logic;
+		rom_word		: out std_logic;
 		
-		BSRAM_ADDR	: out std_logic_vector(19 downto 0);
-		BSRAM_D		: out std_logic_vector(7 downto 0);
-		BSRAM_Q		: in  std_logic_vector(7 downto 0);
-		BSRAM_CE_N	: out std_logic;
-		BSRAM_OE_N	: out std_logic;
-		BSRAM_WE_N	: out std_logic;
+		bsram_addr	: out std_logic_vector(19 downto 0);
+		bsram_d		: out std_logic_vector(7 downto 0);
+		bsram_q		: in  std_logic_vector(7 downto 0);
+		bsram_ce_n	: out std_logic;
+		bsram_oe_n	: out std_logic;
+		bsram_we_n	: out std_logic;
 
-		MAP_ACTIVE  : out std_logic;
-		MAP_CTRL		: in std_logic_vector(7 downto 0);
-		ROM_MASK		: in std_logic_vector(23 downto 0);
-		BSRAM_MASK	: in std_logic_vector(23 downto 0);
+		map_active  : out std_logic;
+		map_ctrl		: in std_logic_vector(7 downto 0);
+		rom_mask		: in std_logic_vector(23 downto 0);
+		bsram_mask	: in std_logic_vector(23 downto 0);
 		
-		EXT_RTC		: in std_logic_vector(64 downto 0);
+		ext_rtc		: in std_logic_vector(64 downto 0);
 		
-		BRK_OUT		: out std_logic;
-		DBG_REG		: in std_logic_vector(7 downto 0) := (others => '0');
-		DBG_DAT_IN	: in std_logic_vector(7 downto 0) := (others => '0');
-		DBG_DAT_OUT	: out std_logic_vector(7 downto 0);
-		DBG_DAT_WR	: in std_logic := '0'
+		brk_out		: out std_logic;
+		dbg_reg		: in std_logic_vector(7 downto 0) := (others => '0');
+		dbg_dat_in	: in std_logic_vector(7 downto 0) := (others => '0');
+		dbg_dat_out	: out std_logic_vector(7 downto 0);
+		dbg_dat_wr	: in std_logic := '0'
 	);
 end DSP_LHRomMap;
 
@@ -192,7 +192,6 @@ begin
 
 	DSP_CS_N <= not DSP_SEL;
 
-	DSPn_BLOCK: if USE_DSPn = '1' generate
 	DSPn : entity work.DSPn
 	port map(
 		CLK			=> MCLK,
@@ -217,7 +216,6 @@ begin
 		DBG_DAT_OUT	=> DBG_DAT_OUT,
 		DBG_DAT_WR	=> DBG_DAT_WR
 	);
-	end generate;
 
 	OBC1 : entity work.OBC1
 	port map(

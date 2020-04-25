@@ -1,0 +1,13 @@
+*_out.cc
+*.json
+*.vo
+*.vcd
+*.o
+*.bit
+*.config
+*.svf
+*.bin
+*.init
+snes_sim*
+snes_frames/
+*.png

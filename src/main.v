@@ -82,17 +82,19 @@ module main (
    input             TURBO,
    output            TURBO_ALLOW,
 
+   output     [23:0] TRACE_ADDR,
+
    output     [15:0] AUDIO_L,
    output     [15:0] AUDIO_R
 );
 
 parameter USE_DLH = 1'b1;
-parameter USE_CX4 = 1'b1;
-parameter USE_SDD1 = 1'b1;
-parameter USE_GSU = 1'b1;
-parameter USE_SA1 = 1'b1;
-parameter USE_DSPn = 1'b1;
-parameter USE_SPC7110 = 1'b1;
+parameter USE_CX4 = 1'b0;
+parameter USE_SDD1 = 1'b0;
+parameter USE_GSU = 1'b0;
+parameter USE_SA1 = 1'b0;
+parameter USE_DSPn = 1'b0;
+parameter USE_SPC7110 = 1'b0;
 
 wire [23:0] CA;
 wire        CPURD_N;
@@ -193,7 +195,14 @@ SNES SNES
 	.turbo(TURBO),
 
 	.audio_l(AUDIO_L),
-	.audio_r(AUDIO_R)
+	.audio_r(AUDIO_R),
+
+	.dbg_sel(8'b0),
+	.dbg_reg(8'b0),
+	.dbg_reg_wr(1'b0),
+	.dbg_dat_in(8'b0),
+
+	.trace_addr(TRACE_ADDR)
 );
 
 wire  [7:0] DLH_DO;
@@ -211,10 +220,11 @@ wire        DLH_BSRAM_WE_N;
 generate
 if (USE_DLH == 1'b1) begin
 
-DSP_LHRomMap #(.USE_DSPn(USE_DSPn)) DSP_LHRomMap
+DSP_LHRomMap /*#(.USE_DSPn(USE_DSPn))*/ DSP_LHRomMap
 (
 	.mclk(MCLK),
 	.rst_n(RESET_N),
+	.enable(1'b1),
 
 	.ca(CA),
 	.di(DO),
@@ -328,6 +338,17 @@ CX4Map CX4Map
 );
 end else
 assign MAP_ACTIVE[0] = 0;
+assign CX4_DO = 0;
+assign CX4_IRQ_N = 1;
+assign CX4_ROM_ADDR = 0;
+assign CX4_ROM_CE_N = 1;
+assign CX4_ROM_OE_N = 1;
+assign CX4_BSRAM_ADDR = 0;
+assign CX4_BSRAM_D = 0;
+assign CX4_BSRAM_CE_N = 1;
+assign CX4_BSRAM_OE_N = 1;
+assign CX4_BSRAM_WE_N = 1;
+assign CX4_ROM_WORD = 0;
 endgenerate
 
 wire [7:0]  SDD_DO;
@@ -389,6 +410,17 @@ SDD1Map SDD1Map
 );
 end else
 assign MAP_ACTIVE[1] = 0;
+assign SDD_DO = 0;
+assign SDD_IRQ_N = 1;
+assign SDD_ROM_ADDR = 0;
+assign SDD_ROM_CE_N = 1;
+assign SDD_ROM_OE_N = 1;
+assign SDD_BSRAM_ADDR = 0;
+assign SDD_BSRAM_D = 0;
+assign SDD_BSRAM_CE_N = 1;
+assign SDD_BSRAM_OE_N = 1;
+assign SDD_BSRAM_WE_N = 1;
+assign SDD_ROM_WORD = 0;
 endgenerate
 
 wire [7:0]  GSU_DO;
@@ -452,6 +484,17 @@ GSUMap GSUMap
 );
 end else
 assign MAP_ACTIVE[2] = 0;
+assign GSU_DO = 0;
+assign GSU_IRQ_N = 1;
+assign GSU_ROM_ADDR = 0;
+assign GSU_ROM_CE_N = 1;
+assign GSU_ROM_OE_N = 1;
+assign GSU_BSRAM_ADDR = 0;
+assign GSU_BSRAM_D = 0;
+assign GSU_BSRAM_CE_N = 1;
+assign GSU_BSRAM_OE_N = 1;
+assign GSU_BSRAM_WE_N = 1;
+assign GSU_ROM_WORD = 0;
 endgenerate
 
 assign GSU_ACTIVE = MAP_ACTIVE[2];
@@ -517,6 +560,18 @@ SA1Map SA1Map
 );
 end else
 assign MAP_ACTIVE[3] = 0;
+assign SA1_DO = 0;
+assign SA1_IRQ_N = 1;
+assign SA1_ROM_ADDR = 0;
+assign SA1_ROM_CE_N = 1;
+assign SA1_ROM_OE_N = 1;
+assign SA1_BSRAM_ADDR = 0;
+assign SA1_BSRAM_D = 0;
+assign SA1_BSRAM_CE_N = 1;
+assign SA1_BSRAM_OE_N = 1;
+assign SA1_BSRAM_WE_N = 1;
+assign SA1_ROM_WORD = 0;
+
 endgenerate
 
 wire [7:0]  SPC7110_DO;
@@ -579,6 +634,18 @@ SPC7110Map SPC7110Map
 );
 end else
 assign MAP_ACTIVE[4] = 0;
+assign SPC7110_DO = 0;
+assign SPC7110_IRQ_N = 1;
+assign SPC7110_ROM_ADDR = 0;
+assign SPC7110_ROM_CE_N = 1;
+assign SPC7110_ROM_OE_N = 1;
+assign SPC7110_BSRAM_ADDR = 0;
+assign SPC7110_BSRAM_D = 0;
+assign SPC7110_BSRAM_CE_N = 1;
+assign SPC7110_BSRAM_OE_N = 1;
+assign SPC7110_BSRAM_WE_N = 1;
+assign SPC7110_ROM_WORD = 0;
+
 endgenerate
 
 assign TURBO_ALLOW = ~(MAP_ACTIVE[3] | MAP_ACTIVE[1]);

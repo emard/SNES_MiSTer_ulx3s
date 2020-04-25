@@ -22,7 +22,7 @@ module sdram
 (
 
 	// interface to the MT48LC16M16 chip
-	inout  reg [15:0] SDRAM_DQ,   // 16 bit bidirectional data bus
+	inout [15:0] SDRAM_DQ,   // 16 bit bidirectional data bus
 	output reg [12:0] SDRAM_A,    // 13 bit multiplexed address bus
 	output reg        SDRAM_DQML, // byte mask
 	output reg        SDRAM_DQMH, // byte mask
@@ -65,6 +65,12 @@ localparam STATE_CONT  = STATE_START+RASCAS_DELAY;
 localparam STATE_READY = STATE_CONT+CAS_LATENCY+1'd1;
 localparam STATE_LAST  = STATE_READY;      // last state in cycle
 
+wire [15:0] dq_di;
+reg [15:0] dq_do;
+reg dq_oe;
+assign SDRAM_DQ = dq_oe ? dq_do : {16{1'bz}};
+assign dq_di = SDRAM_DQ;
+
 reg  [2:0] state;
 reg [24:0] a;
 reg [15:0] data;
@@ -75,7 +81,7 @@ wire       ram_req_test = (we || (a[24:1] != addr[24:1]));
 reg [15:0] last_data;
 
 // access manager
-always @(posedge clk) begin
+always @(posedge clk) begin : blk_am
 	reg old_ref;
 	reg old_rd,old_wr;
 
@@ -108,7 +114,7 @@ always @(posedge clk) begin
 				a <= '1;
 			end
 			else begin
-				last_data <= SDRAM_DQ;
+				last_data <= dq_di;
 			end
 		end
 	end
@@ -128,12 +134,13 @@ localparam MODE_PRE    = 2'b11;
 
 // initialization 
 reg [1:0] mode;
-reg [4:0] reset = '1;
-always @(posedge clk) begin
-	reg init_old=0;
+reg [4:0] reset = 5'b11111;
+reg init_old=0;
+
+always @(posedge clk) begin : blk_init
 	init_old <= init;
 
-	if(init_old & ~init) reset <= '1;
+	if(init_old & ~init) reset <= 5'b11111;
 	else if(state == STATE_LAST) begin
 		if(reset != 0) begin
 			reset <= reset - 5'd1;
@@ -161,10 +168,10 @@ wire [1:0] dqm = {we & ~ds & ~a[0], we & ~ds & a[0]};
 always @(posedge clk) begin
 	if(state == STATE_START) SDRAM_BA <= (mode == MODE_NORMAL) ? addr[24:23] : 2'b00;
 
-	SDRAM_DQ <= 'Z;
+	dq_oe <= 1'b0;
 	casex({ram_req,we,mode,state})
 		{2'bXX, MODE_NORMAL, STATE_START}: {SDRAM_nCS, SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= ram_req_test ? CMD_ACTIVE : CMD_AUTO_REFRESH;
-		{2'b11, MODE_NORMAL, STATE_CONT }: {SDRAM_nCS, SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE, SDRAM_DQ} <= {CMD_WRITE, data};
+		{2'b11, MODE_NORMAL, STATE_CONT }: {SDRAM_nCS, SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE, dq_do, dq_oe} <= {CMD_WRITE, data, 1'b1};
 		{2'b10, MODE_NORMAL, STATE_CONT }: {SDRAM_nCS, SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_READ;
 
 		// init
@@ -184,7 +191,7 @@ always @(posedge clk) begin
 	else if(mode == MODE_PRE && state == STATE_START) SDRAM_A <= 13'b0010000000000;
 	else SDRAM_A <= 0;
 end
-
+/*
 altddio_out
 #(
 	.extend_oe_disable("OFF"),
@@ -209,5 +216,8 @@ sdramclk_ddr
 	.sclr(1'b0),
 	.sset(1'b0)
 );
+*/
+
+ODDRX1F ddr_clock (.D0(1'b0), .D1(1'b1), .Q(SDRAM_CLK), .SCLK(clk), .RST(0)); 
 
 endmodule

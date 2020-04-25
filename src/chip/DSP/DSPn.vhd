@@ -102,7 +102,44 @@ architecture rtl of DSPn is
 	signal DBG_DAT_WRr : std_logic;
 	signal DBG_BRK_ADDR : std_logic_vector(10 downto 0) := (others => '1');
 	signal DBG_CTRL : std_logic_vector(7 downto 0) := (others => '0');
-	
+
+	component dp16k_wrapper_8bit
+	generic (
+		addr_width : natural := 11
+	);
+	port (
+		clock           : in  STD_LOGIC;
+
+		address_a       : in  STD_LOGIC_VECTOR (addr_width-1 DOWNTO 0);
+		data_a          : in  STD_LOGIC_VECTOR (7 DOWNTO 0) := (others => '0');
+		enable_a                : in  STD_LOGIC := '1';
+		wren_a          : in  STD_LOGIC := '0';
+		q_a                     : out STD_LOGIC_VECTOR (7 DOWNTO 0);
+		cs_a            : in  std_logic := '1';
+
+		address_b       : in  STD_LOGIC_VECTOR (addr_width-1 DOWNTO 0) := (others => '0');
+		data_b          : in  STD_LOGIC_VECTOR (7 DOWNTO 0) := (others => '0');
+		enable_b                : in  STD_LOGIC := '1';
+		wren_b          : in  STD_LOGIC := '0';
+		q_b                     : out STD_LOGIC_VECTOR (7 DOWNTO 0);
+		cs_b        : in  std_logic := '1'
+	);
+	end component;
+	component sprom_verilog is
+		generic (
+			addr_width    : integer := 8;
+			data_width    : integer := 8;
+			length        : integer := 8;
+			hex_file      : string := ""
+		);
+		port
+		(
+			clock           : in  STD_LOGIC;
+			address       : in  STD_LOGIC_VECTOR (addr_width-1 DOWNTO 0);
+			q             : out STD_LOGIC_VECTOR (data_width-1 DOWNTO 0)
+		);
+	end component;
+
 begin
 
 	EN <= ENABLE and CE;
@@ -427,7 +464,7 @@ begin
                     std_logic_vector(unsigned(PC) + ("1"&x"254")) when VER="011" else
                     std_logic_vector(unsigned(PC) + ("1"&x"954"));
 
-	PROG_ROM : entity work.spram_sz generic map(13, 24, 7018, "src/chip/DSP/dsp1b23410_p.mif")
+	PROG_ROM : sprom_verilog generic map(13, 24, 7018, "../../src/chip/DSP/dsp1b23410_p.hex")
 	port map(
 		clock		=> CLK,
 		address	=> PROG_ROM_ADDR,
@@ -435,7 +472,7 @@ begin
 	);
 
 	DATA_ROM_ADDR <= VER(2 downto 1) & (VER(0) or (RP(10) and VER(2))) & RP(9 downto 0);
-	DATA_ROM : entity work.spram_sz generic map(13, 16, 6144, "src/chip/DSP/dsp1b23410_d.mif")
+	DATA_ROM : sprom_verilog generic map(13, 16, 6144, "../../src/chip/DSP/dsp1b23410_d.hex")
 	port map(
 		clock		=> CLK,
 		address	=> DATA_ROM_ADDR,
@@ -443,10 +480,10 @@ begin
 	);
 	
 	DATA_RAM_ADDR_A <= "000" & DP(7 downto 0) when VER(2)='0' else DP;
-	DATA_RAM_ADDR_B <= DP_ADDR(11 downto 1) when DP_SEL = '1' and (WR_N = '0' or RD_N = '0') else DATA_RAM_ADDR_A or x"40";
+	DATA_RAM_ADDR_B <= DP_ADDR(11 downto 1) when DP_SEL = '1' and (WR_N = '0' or RD_N = '0') else DATA_RAM_ADDR_A or ("000" & x"40");
 	DATA_RAM_WE <= '1' when OP_INSTR /= INSTR_JP and OP_DST = x"F" and EN = '1' else '0';
 
-	DATA_RAML : entity work.dpram generic map(11, 8)
+	DATA_RAML : dp16k_wrapper_8bit generic map(11)
 	port map(
 		clock			=> CLK,
 		address_a	=> DATA_RAM_ADDR_A,
@@ -459,7 +496,7 @@ begin
 		q_b			=> DATA_RAM_Q_B(7 downto 0)
 	);
 
-	DATA_RAMH : entity work.dpram generic map(11, 8)
+	DATA_RAMH : dp16k_wrapper_8bit generic map(11)
 	port map(
 		clock			=> CLK,
 		address_a	=> DATA_RAM_ADDR_A,

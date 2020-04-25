@@ -214,6 +214,29 @@ architecture rtl of DSP is
 	signal DBG_DAT_WRr	: std_logic;
 	signal DBG_VMUTE 		: std_logic_vector(7 downto 0) := (others => '0');
 
+	component dpram_verilog is
+		generic (
+			addr_width    : integer := 8;
+			data_width    : integer := 8
+		);
+		port
+		(
+			clock                   : in  STD_LOGIC;
+
+			address_a       : in  STD_LOGIC_VECTOR (addr_width-1 DOWNTO 0);
+			data_a          : in  STD_LOGIC_VECTOR (data_width-1 DOWNTO 0) := (others => '0');
+			enable_a                : in  STD_LOGIC := '1';
+			wren_a          : in  STD_LOGIC := '0';
+			q_a                     : out STD_LOGIC_VECTOR (data_width-1 DOWNTO 0);
+			cs_a        : in  std_logic := '1';
+
+			address_b       : in  STD_LOGIC_VECTOR (addr_width-1 DOWNTO 0) := (others => '0');
+			enable_b                : in  STD_LOGIC := '1';
+			q_b                     : out STD_LOGIC_VECTOR (data_width-1 DOWNTO 0);
+			cs_b        : in  std_logic := '1'
+		);
+	end component;
+
 begin
 	
 	MCLK_FREQ <= MCLK_PAL_FREQ when PAL = '1' else MCLK_NTSC_FREQ;
@@ -266,7 +289,7 @@ begin
 				  '1' 		 when REGN_WR(3 downto 1) = "100" and SUBSTEP = 0 and CE = '1' else
 				  '0';
 	
-	REGRAM : entity work.dpram generic map(7,8)
+	REGRAM : dpram_verilog generic map(7,8)
 	port map(
 		clock			=> CLK,
 		data_a		=> REGS_DI,
@@ -331,7 +354,7 @@ begin
 	BDS <= BDS_TBL(STEP,SUBSTEP);
 	INS <= IS_TBL(STEP,SUBSTEP);
 	
-	process(CLK, RST_N, RS, BRR_VOICE, STEP, SMP_A, SMP_WE, SMP_DO, KON_CNT, TDIR_ADDR, BRR_ADDR, BRR_OFFS,
+	process(RS, BRR_VOICE, STEP, SMP_A, SMP_WE, SMP_DO, KON_CNT, TDIR_ADDR, BRR_ADDR, BRR_OFFS,
 			  ECHO_WR_EN, ECHO_ADDR, EOUT, ENABLE, DBG_ADDR, DBG_REG, DBG_DAT_IN, DBG_DAT_WR)
 		variable ADDR_INC : unsigned(1 downto 0);
 		variable LR: integer range 0 to 1;
@@ -453,7 +476,11 @@ begin
 					RAM_CE <= '0';
 			end case;
 		end if;
-		
+	end process;
+
+	process(CLK, RST_N)
+		variable LR: integer range 0 to 1;
+	begin
 		if RST_N = '0' then
 			BRR_NEXT_ADDR <= (others => '0');
 			TBRRHDR <= (others => '0');
@@ -507,7 +534,7 @@ begin
 	RAM_OE_N <= not RAM_OE;
 	RAM_CE_N <= not RAM_CE;
 
-	BRR_BUF : entity work.dpram generic map(7,16)
+	BRR_BUF : dpram_verilog generic map(7,16)
 	port map(
 		clock			=> CLK,
 		address_a	=> BRR_BUF_ADDR_A,

@@ -292,7 +292,50 @@ signal DBG_BG_EN 			: std_logic_vector(7 downto 0) := (others => '1');
 signal DBG_OBJ_EN 		: std_logic_vector(7 downto 0) := (others => '1');
 signal DBG_BRK_ADDR 		: std_logic_vector(15 downto 0) := (others => '1');
 signal FRAME_CNT			: unsigned(15 downto 0);
-	
+
+component dp16k_wrapper_9bit
+generic (
+	addr_width : natural := 11
+);
+port (
+	clock           : in  STD_LOGIC;
+
+	address_a       : in  STD_LOGIC_VECTOR (addr_width-1 DOWNTO 0);
+	data_a          : in  STD_LOGIC_VECTOR (8 DOWNTO 0) := (others => '0');
+	enable_a                : in  STD_LOGIC := '1';
+	wren_a          : in  STD_LOGIC := '0';
+	q_a                     : out STD_LOGIC_VECTOR (8 DOWNTO 0);
+	cs_a            : in  std_logic := '1';
+
+	address_b       : in  STD_LOGIC_VECTOR (addr_width-1 DOWNTO 0) := (others => '0');
+	data_b          : in  STD_LOGIC_VECTOR (8 DOWNTO 0) := (others => '0');
+	enable_b                : in  STD_LOGIC := '1';
+	wren_b          : in  STD_LOGIC := '0';
+	q_b                     : out STD_LOGIC_VECTOR (8 DOWNTO 0);
+	cs_b        : in  std_logic := '1'
+);
+end component;
+
+
+component dpram_dif_ppu is
+	port
+	(
+		clock                   : in  STD_LOGIC;
+
+		address_a       : in  STD_LOGIC_VECTOR (7 DOWNTO 0);
+		data_a          : in  STD_LOGIC_VECTOR (15 DOWNTO 0) := (others => '0');
+		enable_a                : in  STD_LOGIC := '1';
+		wren_a          : in  STD_LOGIC := '0';
+		q_a                     : out STD_LOGIC_VECTOR (15 DOWNTO 0);
+		cs_a        : in  std_logic := '1';
+
+		address_b       : in  STD_LOGIC_VECTOR (6 DOWNTO 0) := (others => '0');
+		enable_b                : in  STD_LOGIC := '1';
+		q_b                     : out STD_LOGIC_VECTOR (31 DOWNTO 0);
+		cs_b        : in  std_logic := '1'
+	);
+end component;
+
 begin
 
 process( RST_N, CLK )
@@ -1239,11 +1282,11 @@ begin
 			end if;
 			
 			if H_CNT = LAST_DOT then
-				M7_TEMP_X <= (resize(signed(M7X), M7_TEMP_X'length) sll 8) + 
+				M7_TEMP_X <= (shift_left(resize(signed(M7X), M7_TEMP_X'length), 8)) + 
 								 (resize(signed(M7A) * signed(ORG_X), M7_TEMP_X'length) and x"FFFFC0") + 
 								 (resize(signed(M7B) * signed(ORG_Y), M7_TEMP_X'length) and x"FFFFC0") + 
 								 (resize(signed(M7B) * M7_Y, M7_TEMP_X'length) and x"FFFFC0");
-				M7_TEMP_Y <= (resize(signed(M7Y), M7_TEMP_Y'length) sll 8) + 
+				M7_TEMP_Y <= (shift_left(resize(signed(M7Y), M7_TEMP_Y'length), 8)) + 
 								 (resize(signed(M7C) * signed(ORG_X), M7_TEMP_Y'length) and x"FFFFC0") + 
 								 (resize(signed(M7D) * signed(ORG_Y), M7_TEMP_Y'length) and x"FFFFC0") + 
 								 (resize(signed(M7D) * M7_Y, M7_TEMP_Y'length) and x"FFFFC0");
@@ -1415,7 +1458,7 @@ end process;
 
 
 --Sprites engine
-OAM : entity work.dpram_dif generic map(8,16,7,32)
+OAM : dpram_dif_ppu
 port map(
 	clock			=> CLK,
 	data_a		=> OAM_D,
@@ -1672,7 +1715,7 @@ begin
 	end if;
 end process;
 
-SPR_BUF : entity work.dpram generic map(8,9)
+SPR_BUF : dp16k_wrapper_9bit generic map(8)
 port map(
 	clock			=> CLK,
 	data_a		=> SPR_PIX_D,

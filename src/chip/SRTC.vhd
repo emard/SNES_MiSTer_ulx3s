@@ -86,14 +86,14 @@ begin
 							if REGS(3) = x"5" then
 								REGS(3) <= (others => '0');
 								REGS(4) <= std_logic_vector( unsigned(REGS(4)) + 1 );	--hour low inc
-								if REGS(4) = x"9" and REGS(5) <= x"2" then
+								if REGS(4) = x"9" and unsigned(REGS(5)) <= x"2" then
 									REGS(4) <= (others => '0');
 									REGS(5) <= std_logic_vector( unsigned(REGS(5)) + 1 );	--hour high inc
 								elsif REGS(4) = x"3" and REGS(5) = x"2" then
 									REGS(4) <= (others => '0');
 									REGS(5) <= (others => '0');
 									REGS(6) <= std_logic_vector( unsigned(REGS(6)) + 1 );	--day low inc
-									if REGS(6) = x"9" and REGS(7)(1 downto 0) <= x"2" then
+									if REGS(6) = x"9" and unsigned(REGS(7)(1 downto 0)) <= x"2" then
 										REGS(6) <= (others => '0');
 										REGS(7) <= std_logic_vector( unsigned(REGS(7)) + 1 );	--day high inc
 									elsif REGS(6) = DAY_OF_MONTH_L and REGS(7) = DAY_OF_MONTH_H then
