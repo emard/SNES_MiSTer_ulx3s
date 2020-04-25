@@ -433,8 +433,8 @@ module top(
 	assign audio_out_r = {4{dac_r}};
 
 	assign debug[0] = clk_sys;
-	assign debug[1] = DOTCLK;
-	assign debug[2] = HSYNC;
+	assign debug[1] = vsync_dvi;
+	assign debug[2] = VBlank_n;
 	assign debug[3] = VSYNC;
 	assign debug[4] = HBlank_n;
 
