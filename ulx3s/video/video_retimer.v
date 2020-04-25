@@ -27,7 +27,7 @@ localparam vpulse = 2;
 localparam vbp = 22;
 
 localparam htotal = xres+hfp+hpulse+hbp;
-localparam vtotal = xres+hfp+hpulse+hbp;
+localparam vtotal = yres+vfp+vpulse+vbp;
 
 reg [11:0] framebuffer[0:(224*256)-1];
 
