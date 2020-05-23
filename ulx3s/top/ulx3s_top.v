@@ -440,6 +440,29 @@ module top
 		.hsync_out(hsync_dvi), .vsync_out(vsync_dvi)
 	);
 `endif
+
+	wire [7:0] osd_vga_r, osd_vga_g, osd_vga_b;
+	wire osd_vga_hsync, osd_vga_vsync, osd_vga_blank;
+	spi_osd
+	#(
+	  .c_start_x(62), .c_start_y(80),
+	  .c_chars_x(64), .c_chars_y(20),
+	  .c_init_on(0),
+	  .c_char_file("osd.mem"),
+	  .c_font_file("font_bizcat8x16.mem")
+	)
+	spi_osd_inst
+	(
+	  .clk_pixel(clk_pix_dvi), .clk_pixel_ena(1),
+	  .i_r(blank_dvi ? 8'b0 : r_dvi),
+	  .i_g(blank_dvi ? 8'b0 : g_dvi),
+	  .i_b(blank_dvi ? 8'b0 : b_dvi),
+	  .i_hsync(hsync_dvi), .i_vsync(vsync_dvi), .i_blank(blank_dvi),
+	  .i_csn(~wifi_gpio5), .i_sclk(wifi_gpio16), .i_mosi(sd_d[1]), // .o_miso(),
+	  .o_r(osd_vga_r), .o_g(osd_vga_g), .o_b(osd_vga_b),
+	  .o_hsync(osd_vga_hsync), .o_vsync(osd_vga_vsync), .o_blank(osd_vga_blank)
+	);
+
 	wire [1:0] tmds[3:0];
 
 	vga2dvid #(
@@ -448,12 +471,12 @@ module top
 	) vga2dvid_instance (
 		.clk_pixel(clk_pix_dvi),
 		.clk_shift(clk_fast_dvi),
-		.in_red(blank_dvi ? 8'b0 : r_dvi),
-		.in_green(blank_dvi ? 8'b0 : g_dvi),
-		.in_blue(blank_dvi ? 8'b0 : b_dvi),
-		.in_hsync(hsync_dvi),
-		.in_vsync(vsync_dvi),
-		.in_blank(blank_dvi),
+		.in_red(osd_vga_r),
+		.in_green(osd_vga_g),
+		.in_blue(osd_vga_b),
+		.in_hsync(osd_vga_hsync),
+		.in_vsync(osd_vga_vsync),
+		.in_blank(osd_vga_blank),
 		.out_clock(tmds[3]),
 		.out_red(tmds[2]),
 		.out_green(tmds[1]),
