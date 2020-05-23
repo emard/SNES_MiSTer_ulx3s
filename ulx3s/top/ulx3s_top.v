@@ -1,7 +1,7 @@
 module top
 #(
-	parameter C_flash_loader=0,
-	parameter C_esp32_loader=1
+	parameter C_flash_loader=1,
+	parameter C_esp32_loader=0
 )
 (
 	input clk_25mhz,
@@ -40,13 +40,13 @@ module top
 	output [4:0] debug
 );
 	wire reset_in = !btn[0] & btn[1] & btn[2]; // reset: pwr+a+b 
-	assign wifi_gpio0 = 1'b1;
 
 	// passthru to ESP32 micropython serial console
 	assign wifi_rxd = ftdi_txd;
 	assign ftdi_rxd = wifi_txd;
 
 	assign sd_d[3] = 1'bz; // FPGA pin pullup sets SD card inactive at SPI bus
+	assign led[7] = sd_d[3];
 
 	reg [7:0] reset_ctr = 0;
 	reg reset_25mhz = 1;
@@ -215,6 +215,9 @@ module top
 	assign main_ram_word = load_done ? (BSRAM_CE_N && ROM_WORD) : 1'b1;
 	assign main_ram_din = load_done ? {BSRAM_D, BSRAM_D} : load_data;
 
+	wire [7:0] rom_type;
+	wire [23:0] rom_mask, ram_mask;
+
 	generate
 	if(C_flash_loader)
 	begin
@@ -223,7 +226,8 @@ module top
 		.clk(clk_sys),
 		.reset(reset_sys),
 		.ready(load_done),
-		.sel(sw[3:1]),
+		//.sel(sw[3:1]),
+		.sel(0),
 		.wren(load_wr),
 		.load_address(load_addr),
 		.load_data(load_data),
@@ -237,43 +241,47 @@ module top
 		.flash_mosi(flash_mosi),
 		.flash_miso(flash_miso)
 	);
+	assign wifi_gpio0 = 1'b1;
 	assign led[3] = load_done;
 	(* keep *) USRMCLK flash_mclk_i(.USRMCLKTS(1'b0), .USRMCLKI(flash_sck));
 	end
 	if(C_esp32_loader)
 	begin
+		wire irq;
 		wire [31:0] spi_addr;
-		wire spi_rd;
-		reg  [7:0] R_spi_data_in;
-		wire spi_wr;
+		wire [7:0] spi_in, spi_out;
+		wire spi_rd, spi_wr;
 		reg R_spi_wr;
 		spi_ram_btn
-		//#(
-		//	.c_addr_bits($bits(spi_addr)),
-		//	.c_sclk_capable_pin(1'b0)
-		//)
+		#(
+			.c_addr_bits($bits(spi_addr)),
+			.c_sclk_capable_pin(1'b0)
+		)
 		spi_ram_btn_inst
 		(
-			.clk(clock),
+			.clk(clk_sys),
 			.csn(~wifi_gpio5),
 			.sclk(wifi_gpio16),
 			.mosi(sd_d[1]), // wifi_gpio4
 			.miso(sd_d[2]), // wifi_gpio12
+			.btn(btn),
+			.irq(irq),
 			.rd(spi_rd),
 			.wr(spi_wr),
 			.addr(spi_addr),
-			.data_in(R_spi_data_in), // R_spi_data_in used to read BTN state
-			.data_out(flash_loader_data_out)
+			.data_in(spi_in),
+			.data_out(spi_out)
 		);
+		assign wifi_gpio0 = ~irq;
 		wire flash_loader_data_ready = spi_wr & ~R_spi_wr;
-		reg R_sys_reset;
-		always @(posedge clock)
+		reg [7:0] R_cpu_control;
+		always @(posedge clk_sys)
 		begin
 			R_spi_wr <= spi_wr;
 			if(spi_wr == 1'b1 && spi_addr[31:24] == 8'hFF)
-				R_sys_reset <= flash_loader_data_out[0];
+				R_cpu_control <= spi_out;
 		end
-		assign sys_reset = R_sys_reset;
+		assign led[6] = R_cpu_control[0];
     	end
 	endgenerate
 
@@ -297,8 +305,6 @@ module top
 	//localparam ROM_SIZE = 512*1024;
 	//localparam RAM_SIZE = 2*1024;
 
-	reg [7:0] rom_type;
-	reg [23:0] rom_mask, ram_mask;
 
 	wire [7:0] R,G,B;
 	wire FIELD, INTERLACE;
@@ -500,8 +506,8 @@ module top
 	assign led[4] = R[7] || R[6];
 	assign led[5] = G[7] || G[6];
 
-	assign led[6] = dac_l;
-	assign led[7] = dac_r;
+	//assign led[6] = dac_l;
+	//assign led[7] = dac_r;
 
 	wire [15:0] audio_l_u = AUDIO_L + 16'h8000;
 	wire [15:0] audio_r_u = AUDIO_R + 16'h8000;
