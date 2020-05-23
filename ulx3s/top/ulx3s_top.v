@@ -1,10 +1,13 @@
-module top(
+module top
+#(
+	parameter C_flash_loader=0,
+	parameter C_esp32_loader=1
+)
+(
 	input clk_25mhz,
 	output [7:0] led,
 	input [6:0] btn,
 	input [3:0] sw,
-
-	output wifi_gpio0,
 
 	output sdram_clk, sdram_cke, sdram_csn, sdram_wen,
 	output sdram_rasn, sdram_casn,
@@ -20,15 +23,30 @@ module top(
 	output flash_csn,
 	inout flash_mosi, flash_miso, flash_holdn, flash_wpn,
 
+	input  ftdi_txd,
+	output ftdi_rxd,
+
+	input  wifi_txd,
+	output wifi_rxd,
+	output wifi_gpio0,
+	input  wifi_gpio5,
+	input  wifi_gpio16,
+
+	inout  sd_clk, sd_cmd,
+	inout   [3:0] sd_d,
+
 	output [3:0] audio_out_l, audio_out_r,
 
-	output [4:0] debug,
-
-	output ftdi_rxd
+	output [4:0] debug
 );
-
 	wire reset_in = !btn[0] & btn[1] & btn[2]; // reset: pwr+a+b 
 	assign wifi_gpio0 = 1'b1;
+
+	// passthru to ESP32 micropython serial console
+	assign wifi_rxd = ftdi_txd;
+	assign ftdi_rxd = wifi_txd;
+
+	assign sd_d[3] = 1'bz; // FPGA pin pullup sets SD card inactive at SPI bus
 
 	reg [7:0] reset_ctr = 0;
 	reg reset_25mhz = 1;
@@ -197,6 +215,9 @@ module top(
 	assign main_ram_word = load_done ? (BSRAM_CE_N && ROM_WORD) : 1'b1;
 	assign main_ram_din = load_done ? {BSRAM_D, BSRAM_D} : load_data;
 
+	generate
+	if(C_flash_loader)
+	begin
 	wire flash_sck;
 	spi_game_loader loader(
 		.clk(clk_sys),
@@ -216,10 +237,45 @@ module top(
 		.flash_mosi(flash_mosi),
 		.flash_miso(flash_miso)
 	);
-
 	assign led[3] = load_done;
-
 	(* keep *) USRMCLK flash_mclk_i(.USRMCLKTS(1'b0), .USRMCLKI(flash_sck));
+	end
+	if(C_esp32_loader)
+	begin
+		wire [31:0] spi_addr;
+		wire spi_rd;
+		reg  [7:0] R_spi_data_in;
+		wire spi_wr;
+		reg R_spi_wr;
+		spi_ram_btn
+		//#(
+		//	.c_addr_bits($bits(spi_addr)),
+		//	.c_sclk_capable_pin(1'b0)
+		//)
+		spi_ram_btn_inst
+		(
+			.clk(clock),
+			.csn(~wifi_gpio5),
+			.sclk(wifi_gpio16),
+			.mosi(sd_d[1]), // wifi_gpio4
+			.miso(sd_d[2]), // wifi_gpio12
+			.rd(spi_rd),
+			.wr(spi_wr),
+			.addr(spi_addr),
+			.data_in(R_spi_data_in), // R_spi_data_in used to read BTN state
+			.data_out(flash_loader_data_out)
+		);
+		wire flash_loader_data_ready = spi_wr & ~R_spi_wr;
+		reg R_sys_reset;
+		always @(posedge clock)
+		begin
+			R_spi_wr <= spi_wr;
+			if(spi_wr == 1'b1 && spi_addr[31:24] == 8'hFF)
+				R_sys_reset <= flash_loader_data_out[0];
+		end
+		assign sys_reset = R_sys_reset;
+    	end
+	endgenerate
 
 	reg snes_reset = 1'b1;
 	reg [4:0] snes_reset_count = 0;
@@ -409,12 +465,13 @@ module top(
 	ODDRX1F ddr_green (.D0(tmds[1][0]), .D1(tmds[1][1]), .Q(gpdi_dp[1]), .SCLK(clk_fast_dvi), .RST(0));
 	ODDRX1F ddr_blue  (.D0(tmds[0][0]), .D1(tmds[0][1]), .Q(gpdi_dp[0]), .SCLK(clk_fast_dvi), .RST(0));
 
+/*
 	uart_tracer trace_i (
 		.clk(clk_25mhz),
 		.trace_data({rom_type, rom_mask[23:16], trace_addr[23:8]}),
 		.uart_tx(ftdi_rxd)
 	);
-
+*/
 	wire dac_l, dac_r;
 
 	assign led[4] = R[7] || R[6];
@@ -466,4 +523,3 @@ module top(
 	end
 
 endmodule
-
