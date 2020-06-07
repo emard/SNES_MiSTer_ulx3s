@@ -1,7 +1,7 @@
 module top
 #(
-	parameter C_flash_loader=1,
-	parameter C_esp32_loader=0
+	parameter C_flash_loader=0,
+	parameter C_esp32_loader=1
 )
 (
 	input clk_25mhz,
@@ -48,6 +48,7 @@ module top
 	assign sd_d[3] = 1'bz; // FPGA pin pullup sets SD card inactive at SPI bus
 	assign led[7] = sd_d[3];
 
+	reg [7:0] R_cpu_control = 0;
 	reg [7:0] reset_ctr = 0;
 	reg reset_25mhz = 1;
 	always @(posedge clk_25mhz) begin
@@ -55,37 +56,49 @@ module top
 			reset_ctr <= 0;
 		else if (!(&reset_ctr))
 			reset_ctr <= reset_ctr + 1'b1;
-		reset_25mhz <= !(&reset_ctr);
+		reset_25mhz <= R_cpu_control[0] | !(&reset_ctr);
 	end
 
 	assign led[0] = reset_25mhz;
 
-	wire clk_100mhz;
-	wire locked_100mhz;
-
-	pll_25_100 pll_100_i (.clkin(clk_25mhz), .clkout0(clk_100mhz), .locked(locked_100mhz));
-
-	reg reset_100mhz = 1'b1;
-	always @(posedge clk_100mhz)
-		reset_100mhz <= !locked_100mhz || reset_25mhz;
-
-	assign led[1] = locked_100mhz;
-
-	localparam DIV_NTSC = 922441723;
-	localparam DIV_PAL = 914027882;
+	wire clk_125mhz;
+	wire locked_125mhz;
+	reg reset_125mhz = 1'b1;
+	always @(posedge clk_125mhz)
+		reset_125mhz <= !locked_125mhz || reset_25mhz;
+	// x/4*5 for using 125MHz instead of 100MHz
+	localparam DIV_NTSC = 922441723/4*5;
+	localparam DIV_PAL = 914027882/4*5;
 	wire pal_mode = sw[0];
 
 	wire clk_frac;
-	fracdiv fracdiv_i (.clkin(clk_100mhz), .reset(reset_100mhz), .div(pal_mode ? DIV_PAL : DIV_NTSC), .clkout(clk_frac));
+	fracdiv fracdiv_i (.clkin(clk_125mhz), .reset(reset_125mhz), .div(pal_mode ? DIV_PAL : DIV_NTSC), .clkout(clk_frac));
 
 	wire clk_mem, clk_video, clk_sys;
 	wire locked_sys;
-
-	pll_sys pll_sys_i (.clkin(clk_frac), .clkout0(clk_mem), .clkout1(clk_video), .clkout2(clk_sys), .locked(locked_sys));
+	wire [3:0] clocks_sys;
+	ecp5pll
+	#(
+	    .in_hz(21477300),
+	  .out0_hz(85909100), .out0_tol_hz(100),
+	  .out1_hz(42954500), .out1_tol_hz(100), .out1_deg(90),
+	  .out2_hz(21477300), .out2_tol_hz(100),
+	  .out3_hz(21477300), .out3_tol_hz(100) // not used
+	)
+	pll_sys_i
+	(
+	  .clk_i(clk_frac),
+	  .clk_o(clocks_sys),
+	  .locked(locked_sys)
+	);
+	assign clk_mem   = clocks_sys[0];
+	assign clk_video = clocks_sys[1];
+	assign clk_sys   = clocks_sys[2];
 
 	reg reset_sys = 1'b1;
 	always @(posedge clk_sys)
-		reset_sys <= !locked_sys || reset_100mhz;
+//		reset_sys <= !locked_sys || reset_100mhz;
+		reset_sys <= !locked_sys || reset_125mhz;
 
 	assign led[2] = locked_sys;
 
@@ -218,12 +231,12 @@ module top
 	wire [7:0] rom_type;
 	wire [23:0] rom_mask, ram_mask;
 
-	generate
-	if(C_flash_loader)
-	begin
 	wire loading, flashmem_ready;
 	wire [23:0] flash_address;
 	wire [31:0] flash_dout; // only [15:0] used
+	generate
+	if(C_flash_loader)
+	begin
 	icosoc_flashmem
 	flash_i
 	(
@@ -271,7 +284,6 @@ module top
 		wire [31:0] spi_addr;
 		wire [7:0] spi_in, spi_out;
 		wire spi_rd, spi_wr;
-		reg R_spi_wr;
 		spi_ram_btn
 		#(
 			.c_addr_bits($bits(spi_addr)),
@@ -293,15 +305,47 @@ module top
 			.data_out(spi_out)
 		);
 		assign wifi_gpio0 = ~irq;
-		wire flash_loader_data_ready = spi_wr & ~R_spi_wr;
-		reg [7:0] R_cpu_control;
+		reg [7:0] R_data[0:1];
+		reg R_spi_wr;
+		reg flashmem_ready;
 		always @(posedge clk_sys)
 		begin
 			R_spi_wr <= spi_wr;
-			if(spi_wr == 1'b1 && spi_addr[31:24] == 8'hFF)
-				R_cpu_control <= spi_out;
+			if(spi_wr == 1'b1)
+			begin
+				if(spi_addr[31:24] == 8'hFF)
+					R_cpu_control <= spi_out;
+				else
+					R_data[spi_addr[0]] <= spi_out;
+			end
+			flashmem_ready <= spi_addr[31:24] != 8'h00 || spi_addr[0] == 1'b0 ? 1'b0 : spi_wr & ~R_spi_wr;
 		end
 		assign led[6] = R_cpu_control[0];
+		assign flash_dout[15:8] = R_data[1];
+		assign flash_dout[7:0]  = R_data[0];
+		game_loader
+		loader
+		(
+			.clk(clk_sys),
+			.reset(reset_sys),
+			.ready(load_done),
+			//.sel(sw[3:1]),
+			.sel(0),
+
+			//.loading(loading),               // ->
+			.flashmem_ready(flashmem_ready), // <-
+			//.flash_address(flash_address),   // ->
+			.flash_dout(flash_dout[15:0]),   // <-
+
+			.wren(load_wr),
+			.load_address(load_addr),
+			.load_data(load_data),
+
+			.rom_type(rom_type),
+			.rom_mask(rom_mask),
+			.ram_mask(ram_mask)
+		);
+		assign led[3] = load_done;
     	end
 	endgenerate
 
@@ -424,12 +468,24 @@ module top
 
 	wire clk_pix_dvi;
 	wire clk_fast_dvi;
-
-	pll_dvi pll_dvi_i (
-		.clkin(clk_25mhz),
-		.clkout0(clk_fast_dvi),
-		.clkout1(clk_pix_dvi)
+	wire [3:0] clocks_dvi;
+	ecp5pll
+	#(
+	    .in_hz( 25*1000000),
+	  .out0_hz(125*1000000),
+	  .out1_hz( 25*1000000),
+	  .out2_hz( 25*1000000), // not used
+	  .out3_hz( 25*1000000), // not used
+	)
+	pll_dvi_i
+	(
+	  .clk_i(clk_25mhz),
+	  .clk_o(clocks_dvi),
+	  .locked(locked_125mhz)
 	);
+	assign clk_fast_dvi = clocks_dvi[0];
+	assign clk_pix_dvi  = clocks_dvi[1];
+	assign clk_125mhz   = clocks_dvi[0];
 
 	wire hsync_dvi, vsync_dvi, blank_dvi;
 	wire [7:0] r_dvi, g_dvi, b_dvi;
