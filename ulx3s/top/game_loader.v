@@ -7,7 +7,7 @@ module game_loader
 
 	output reg    loading = 1'b0,
 	output [23:0] flash_address,
-	input  [31:0] flash_dout,
+	input  [15:0] flash_dout,
 	input         flashmem_ready,
 
 	output reg wren,
@@ -28,8 +28,6 @@ module game_loader
 	reg [10:0] startup_wait_ctr = 0;
 
 	reg [3:0] state;
-
-	wire [31:0] flash_dout;
 
 	reg almost_done = 0;
 	//wire flashmem_ready;
