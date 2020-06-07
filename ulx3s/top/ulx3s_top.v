@@ -221,6 +221,47 @@ module top
 	generate
 	if(C_flash_loader)
 	begin
+	wire loading, flashmem_ready;
+	wire [23:0] flash_address;
+	wire [31:0] flash_dout;
+	icosoc_flashmem
+	flash_i
+	(
+		.clk(clk_sys),
+		.reset(reset_sys),
+		.valid(loading),        // <-
+		.ready(flashmem_ready), // -> 
+		.addr(flash_address),   // <-
+		.rdata(flash_dout),     // ->
+
+		.spi_cs  (flash_csn),
+		.spi_sclk(flash_sck),
+		.spi_mosi(flash_mosi),
+		.spi_miso(flash_miso)
+	);
+	game_loader
+	loader
+	(
+		.clk(clk_sys),
+		.reset(reset_sys),
+		.ready(load_done),
+		//.sel(sw[3:1]),
+		.sel(0),
+
+		.loading(loading),               // ->
+		.flashmem_ready(flashmem_ready), // <-
+		.flash_address(flash_address),   // ->
+		.flash_dout(flash_dout),         // <-
+
+		.wren(load_wr),
+		.load_address(load_addr),
+		.load_data(load_data),
+
+		.rom_type(rom_type),
+		.rom_mask(rom_mask),
+		.ram_mask(ram_mask)
+	);
+	/*
 	wire flash_sck;
 	spi_game_loader loader(
 		.clk(clk_sys),
@@ -241,6 +282,7 @@ module top
 		.flash_mosi(flash_mosi),
 		.flash_miso(flash_miso)
 	);
+	*/
 	assign wifi_gpio0 = 1'b1;
 	assign led[3] = load_done;
 	(* keep *) USRMCLK flash_mclk_i(.USRMCLKTS(1'b0), .USRMCLKI(flash_sck));

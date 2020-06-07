@@ -14,7 +14,10 @@ ghdl --ieee=synopsys -fexplicit -frelaxed-rules --std=08 \
 	-e DSP_LHRomMap
 read_verilog ../../src/main.v
 read_verilog ../osd/spi_ram_btn.v ../osd/spi_osd.v ../osd/osd.v ../osd/spirw_slave_v.v
-read_verilog ../top/ulx3s_top.v ../top/trace.v ../video/tmds_encoder.v ../../sys/sigma_delta_dac.v ../video/vga2dvid.v ../video/video_retimer.v ../top/uart_tx.v ../top/spigameload.v ../top/flashmem.v ../pll/pll_25_100.v ../pll/pll_dvi.v ../pll/pll_sys.v ../pll/ecp5_fracdiv.v
+read_verilog ../top/ulx3s_top.v ../top/trace.v ../video/tmds_encoder.v ../../sys/sigma_delta_dac.v \
+../video/vga2dvid.v ../video/video_retimer.v ../top/uart_tx.v ../top/spigameload.v \
+../top/game_loader.v ../top/icosoc_flashmem.v ../pll/pll_25_100.v ../pll/pll_dvi.v \
+../pll/pll_sys.v ../pll/ecp5_fracdiv.v
 read_verilog -sv ../../sdram.sv
 
 synth_ecp5 -top top -nowidelut -run :check
