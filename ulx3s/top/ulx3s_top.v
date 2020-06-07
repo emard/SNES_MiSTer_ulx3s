@@ -261,28 +261,6 @@ module top
 		.rom_mask(rom_mask),
 		.ram_mask(ram_mask)
 	);
-	/*
-	wire flash_sck;
-	spi_game_loader loader(
-		.clk(clk_sys),
-		.reset(reset_sys),
-		.ready(load_done),
-		//.sel(sw[3:1]),
-		.sel(0),
-		.wren(load_wr),
-		.load_address(load_addr),
-		.load_data(load_data),
-
-		.rom_type(rom_type),
-		.rom_mask(rom_mask),
-		.ram_mask(ram_mask),
-
-		.flash_sck(flash_sck),
-		.flash_csn(flash_csn),
-		.flash_mosi(flash_mosi),
-		.flash_miso(flash_miso)
-	);
-	*/
 	assign wifi_gpio0 = 1'b1;
 	assign led[3] = load_done;
 	(* keep *) USRMCLK flash_mclk_i(.USRMCLKTS(1'b0), .USRMCLKI(flash_sck));
