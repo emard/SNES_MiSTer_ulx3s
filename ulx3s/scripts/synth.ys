@@ -18,7 +18,7 @@ read_verilog ../top/ulx3s_top.v ../top/trace.v ../video/tmds_encoder.v ../../sys
 ../video/vga2dvid.v ../video/video_retimer.v ../top/uart_tx.v \
 ../top/game_loader.v ../top/icosoc_flashmem.v ../pll/pll_25_100.v ../pll/pll_dvi.v \
 ../pll/pll_sys.v ../pll/ecp5_fracdiv.v
-read_verilog -sv ../../sdram.sv
+read_verilog -sv ../../sdram.sv ../pll/ecp5pll.sv
 
 synth_ecp5 -top top -nowidelut -run :check
 
