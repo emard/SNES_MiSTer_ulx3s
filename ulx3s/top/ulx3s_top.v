@@ -223,7 +223,7 @@ module top
 	begin
 	wire loading, flashmem_ready;
 	wire [23:0] flash_address;
-	wire [31:0] flash_dout;
+	wire [31:0] flash_dout; // only [15:0] used
 	icosoc_flashmem
 	flash_i
 	(
@@ -251,7 +251,7 @@ module top
 		.loading(loading),               // ->
 		.flashmem_ready(flashmem_ready), // <-
 		.flash_address(flash_address),   // ->
-		.flash_dout(flash_dout),         // <-
+		.flash_dout(flash_dout[15:0]),   // <-
 
 		.wren(load_wr),
 		.load_address(load_addr),
