@@ -3,16 +3,18 @@
 
 module spi_osd
 #(
-  parameter [7:0] c_addr_enable  = 8'hFE, // high addr byte of enable byte
-  parameter [7:0] c_addr_display = 8'hFD, // high addr byte of display data, +0x10000 for inverted
-  parameter c_start_x   = 64,  // x1  pixel window h-position
-  parameter c_start_y   = 48,  // x1  pixel window v-position
-  parameter c_chars_x   = 64,  // x8  pixel window h-size
-  parameter c_chars_y   = 24,  // x16 pixel window v-size
-  parameter c_init_on   = 1,   // 0:default OFF 1:default ON
-  parameter c_inverse   = 1,   // 0:no inverse, 1:inverse support
-  parameter c_char_file = "osd.mem", // initial window content, 2 ASCII HEX digits per line
-  parameter c_font_file = "font_bizcat8x16.mem" // font bitmap, 8 ASCII BIN digits per line
+  parameter  [7:0] c_addr_enable  = 8'hFE, // high addr byte of enable byte
+  parameter  [7:0] c_addr_display = 8'hFD, // high addr byte of display data, +0x10000 for inverted
+  parameter        c_start_x      = 64,  // x1  pixel window h-position
+  parameter        c_start_y      = 48,  // x1  pixel window v-position
+  parameter        c_chars_x      = 64,  // x8  pixel window h-size
+  parameter        c_chars_y      = 24,  // x16 pixel window v-size
+  parameter        c_init_on      = 1,   // 0:default OFF 1:default ON
+  parameter        c_inverse      = 1,   // 0:no inverse, 1:inverse support
+  parameter        c_transparency = 0,   // 1:see-thru OSD menu 0:opaque
+  parameter [23:0] c_bgcolor      = 24'h503020, // RRGGBB menu background color
+  parameter        c_char_file    = "osd.mem",            // initial window content, 2 ASCII HEX digits per line
+  parameter        c_font_file    = "font_bizcat8x16.mem" // font bitmap, 8 ASCII BIN digits per line
 )
 (
   input  wire clk_pixel, clk_pixel_ena,
@@ -87,9 +89,9 @@ module spi_osd
     wire [7:0] data_out_align = {data_out[0], data_out[7:1]};
     wire osd_pixel = data_out_align[7-osd_x[2:0]];
 
-    wire [7:0] osd_r = osd_pixel ? 8'hff : 8'h50;
-    wire [7:0] osd_g = osd_pixel ? 8'hff : 8'h30;
-    wire [7:0] osd_b = osd_pixel ? 8'hff : 8'h20;
+    wire [7:0] osd_r = osd_pixel ? 8'hff : c_bgcolor[23:16];
+    wire [7:0] osd_g = osd_pixel ? 8'hff : c_bgcolor[15:8];
+    wire [7:0] osd_b = osd_pixel ? 8'hff : c_bgcolor[7:0];
 
     // OSD overlay
     osd
@@ -97,7 +99,8 @@ module spi_osd
       .C_x_start(c_start_x),
       .C_x_stop (c_start_x+8*c_chars_x-1),
       .C_y_start(c_start_y),
-      .C_y_stop (c_start_y+16*c_chars_y-1)
+      .C_y_stop (c_start_y+16*c_chars_y-1),
+      .C_transparency(c_transparency)
     )
     osd_instance
     (

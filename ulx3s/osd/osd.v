@@ -87,33 +87,19 @@ module osd
     end
   end
 
-  wire [7:0] S_osd_r, S_osd_g, S_osd_b;
-  generate
-    if(C_transparency)
-    begin
-      assign S_osd_r = {i_osd_r[7],i_osd_r[6:5]|i_r[7:6],i_r[6:2]};
-      assign S_osd_g = {i_osd_g[7],i_osd_g[6:5]|i_g[7:6],i_g[6:2]};
-      assign S_osd_b = {i_osd_b[7],i_osd_b[6:5]|i_b[7:6],i_b[6:2]};
-    end
-    else
-    begin
-      assign S_osd_r = i_osd_r;
-      assign S_osd_g = i_osd_g;
-      assign S_osd_b = i_osd_b;
-    end
-  endgenerate
-
   reg [7:0] R_vga_r, R_vga_g, R_vga_b;
   reg R_hsync, R_vsync, R_blank;
+  generate
+  if(C_transparency)
   always @(posedge clk_pixel)
   begin
     if(clk_pixel_ena)
     begin
       if(osd_en & i_osd_en)
       begin
-        R_vga_r <= {i_osd_r[7:6],i_r[7:2]};
-        R_vga_g <= {i_osd_g[7:6],i_g[7:2]};
-        R_vga_b <= {i_osd_b[7:6],i_b[7:2]};
+        R_vga_r <= {i_osd_r[7],i_osd_r[6:0]|i_r[7:1]};
+        R_vga_g <= {i_osd_g[7],i_osd_g[6:0]|i_g[7:1]};
+        R_vga_b <= {i_osd_b[7],i_osd_b[6:0]|i_b[7:1]};
       end
       else
       begin
@@ -126,6 +112,29 @@ module osd
       R_blank <= i_blank;
     end
   end
+  else // C_transparency == 0
+  always @(posedge clk_pixel)
+  begin
+    if(clk_pixel_ena)
+    begin
+      if(osd_en & i_osd_en)
+      begin
+        R_vga_r <= i_osd_r;
+        R_vga_g <= i_osd_g;
+        R_vga_b <= i_osd_b;
+      end
+      else
+      begin
+        R_vga_r <= i_r;
+        R_vga_g <= i_g;
+        R_vga_b <= i_b;
+      end
+      R_hsync <= i_hsync;
+      R_vsync <= i_vsync;
+      R_blank <= i_blank;
+    end
+  end
+  endgenerate
 
   assign o_osd_x = R_osd_x;
   assign o_osd_y = R_osd_y;
