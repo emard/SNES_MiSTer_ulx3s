@@ -185,7 +185,7 @@ class osd:
         s=ld_nes.ld_nes(self.spi,self.cs)
         s.ctrl(1)
         s.ctrl(0)
-        s.load_stream(open(filename,"rb"),addr=0,maxlen=0x110000)
+        s.load_stream(open(filename,"rb"),addr=0,maxlen=0x101000)
         del s
         gc.collect()
         self.enable[0]=0
@@ -350,6 +350,6 @@ class osd:
   #    self.cs.off()
 
 os.mount(SDCard(slot=3),"/sd")
-#ecp5.prog("/sd/nes/bitstreams/nes12f_esp32_darfon.bit")
+ecp5.prog("/sd/snes/bitstreams/snes85f_esp32.bit")
 gc.collect()
 trs80=osd()
