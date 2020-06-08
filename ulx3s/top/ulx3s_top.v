@@ -318,7 +318,7 @@ module top
 				else
 					R_data[spi_addr[0]] <= spi_out;
 			end
-			flashmem_ready <= spi_addr[31:24] != 8'h00 || spi_addr[0] == 1'b0 ? 1'b0 : spi_wr & ~R_spi_wr;
+			flashmem_ready <= spi_addr[31:24] == 8'h00 && spi_addr[0] == 1'b1 ? spi_wr & ~R_spi_wr : 1'b0;
 		end
 		assign led[6] = R_cpu_control[0];
 		assign flash_dout[15:8] = R_data[1];
@@ -530,6 +530,7 @@ module top
 	  .c_start_x(62), .c_start_y(80),
 	  .c_chars_x(64), .c_chars_y(20),
 	  .c_init_on(0),
+	  .c_transparency(1),
 	  .c_char_file("osd.mem"),
 	  .c_font_file("font_bizcat8x16.mem")
 	)
