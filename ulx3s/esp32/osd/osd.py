@@ -185,7 +185,24 @@ class osd:
         s=ld_nes.ld_nes(self.spi,self.cs)
         s.ctrl(1)
         s.ctrl(0)
-        s.load_stream(open(filename,"rb"),addr=0,maxlen=0x101000)
+        s.load_stream(open(filename,"rb"))
+        del s
+        gc.collect()
+        self.enable[0]=0
+        self.osd_enable(0)
+      if filename.startswith("/sd/ti99_4a/") and filename.endswith(".bin"):
+        import ld_ti99_4a
+        s=ld_ti99_4a.ld_ti99_4a(self.spi,self.cs)
+        s.load_rom_auto(open(filename,"rb"),filename)
+        del s
+        gc.collect()
+        self.enable[0]=0
+        self.osd_enable(0)
+      if (filename.startswith("/sd/msx") and filename.endswith(".rom")) \
+      or filename.endswith(".mx1"):
+        import ld_msx
+        s=ld_msx.ld_msx(self.spi,self.cs)
+        s.load_msx_rom(open(filename,"rb"))
         del s
         gc.collect()
         self.enable[0]=0
@@ -349,7 +366,11 @@ class osd:
   #    self.spi.write(bytearray(a)) # write content
   #    self.cs.off()
 
-os.mount(SDCard(slot=3),"/sd")
-ecp5.prog("/sd/snes/bitstreams/snes85f_esp32.bit")
+bitstream="/sd/ti99_4a/bitstreams/ulx3s_85f_spi_ti99_4a.bit"
+try:
+  os.mount(SDCard(slot=3),"/sd")
+  ecp5.prog(bitstream)
+except:
+  print(bitstream+" file not found")
 gc.collect()
-trs80=osd()
+run=osd()
