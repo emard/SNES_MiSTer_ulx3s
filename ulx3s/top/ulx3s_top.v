@@ -81,9 +81,9 @@ module top
 	#(
 	    .in_hz(21477300),
 	  .out0_hz(85909100), .out0_tol_hz(100),
-	  .out1_hz(42954500), .out1_tol_hz(100), .out1_deg(90),
+	  .out1_hz(42954500), .out1_tol_hz(100), .out1_deg(0),
 	  .out2_hz(21477300), .out2_tol_hz(100),
-	  .out3_hz(21477300), .out3_tol_hz(100) // not used
+	  .out3_hz(85909100), .out3_tol_hz(100), .out3_deg(270)
 	)
 	pll_sys_i
 	(
@@ -94,6 +94,7 @@ module top
 	assign clk_mem   = clocks_sys[0];
 	assign clk_video = clocks_sys[1];
 	assign clk_sys   = clocks_sys[2];
+	assign sdram_clk = clocks_sys[3]; // phase shifted
 
 	reg reset_sys = 1'b1;
 	always @(posedge clk_sys)
@@ -193,7 +194,7 @@ module top
 		.SDRAM_nWE(sdram_wen),
 		.SDRAM_nRAS(sdram_rasn),
 		.SDRAM_nCAS(sdram_casn),
-		.SDRAM_CLK(sdram_clk),
+		//.SDRAM_CLK(sdram_clk),
 		.SDRAM_CKE(sdram_cke),
 
 		.init(/*reset_sys*/ 1'b0),
