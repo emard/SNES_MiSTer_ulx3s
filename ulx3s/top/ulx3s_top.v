@@ -1,5 +1,6 @@
 module top
 #(
+	parameter C_btn_phase=0, // 0:disabled, 1:enabled (debug only)
 	parameter C_flash_loader=0,
 	parameter C_esp32_loader=1
 )
@@ -71,30 +72,73 @@ module top
 	localparam DIV_PAL = 914027882/4*5;
 	wire pal_mode = sw[0];
 
+	wire clk_pix_dvi;
+	wire clk_fast_dvi;
+	wire [3:0] clocks_dvi;
+	ecp5pll
+	#(
+	    .in_hz( 25*1000000),
+	  .out0_hz(125*1000000),
+	  .out1_hz( 25*1000000)
+	)
+	pll_dvi_i
+	(
+	  .clk_i(clk_25mhz),
+	  .clk_o(clocks_dvi),
+	  .locked(locked_125mhz)
+	);
+	assign clk_125mhz   = clocks_dvi[0];
+	assign clk_fast_dvi = clocks_dvi[0];
+	assign clk_pix_dvi  = clocks_dvi[1];
+
 	wire clk_frac;
 	fracdiv fracdiv_i (.clkin(clk_125mhz), .reset(reset_125mhz), .div(pal_mode ? DIV_PAL : DIV_NTSC), .clkout(clk_frac));
 
-	wire clk_mem, clk_video, clk_sys;
+	wire phasedir=0, phasestep=0, phaseloadreg=0;
+	generate
+	if(C_btn_phase)
+	btn_ecp5pll_phase
+	btn_ecp5pll_phase_i
+	(
+	  .clk(clk_25mhz),
+	  .inc(btn[2]),
+	  .dec(btn[1]),
+	  //.phase(led),
+	  .phasedir(phasedir),
+	  .phasestep(phasestep),
+	  .phaseloadreg(phaseloadreg)
+	);
+        endgenerate
+
+	wire clk_mem, clk_sys;
 	wire locked_sys;
 	wire [3:0] clocks_sys;
 	ecp5pll
 	#(
 	    .in_hz(21477300),
 	  .out0_hz(85909100), .out0_tol_hz(100),
-	  .out1_hz(42954500), .out1_tol_hz(100), .out1_deg(0),
+	  // hedgehog opening screen: 220-300,
+	  // 260 works best but not good enough:
+	  // 259 and 261 less good
+	  // mario starts and crashes,
+	  // not working: 0-200, 330-359
+	  .out1_hz(85909100), .out1_tol_hz(100), .out1_deg(260),
 	  .out2_hz(21477300), .out2_tol_hz(100),
-	  .out3_hz(85909100), .out3_tol_hz(100), .out3_deg(270)
+	  .dynamic_en(C_btn_phase)
 	)
 	pll_sys_i
 	(
 	  .clk_i(clk_frac),
 	  .clk_o(clocks_sys),
+	  .phasesel(2'd3),
+	  .phasedir(phasedir),
+	  .phasestep(phasestep),
+	  .phaseloadreg(phaseloadreg),
 	  .locked(locked_sys)
 	);
 	assign clk_mem   = clocks_sys[0];
-	assign clk_video = clocks_sys[1];
+	assign sdram_clk = clocks_sys[1]; // phase shifted for SDRAM chip
 	assign clk_sys   = clocks_sys[2];
-	assign sdram_clk = clocks_sys[3]; // phase shifted
 
 	reg reset_sys = 1'b1;
 	always @(posedge clk_sys)
@@ -466,27 +510,6 @@ module top
 
 		.TRACE_ADDR(trace_addr)
 	);
-
-	wire clk_pix_dvi;
-	wire clk_fast_dvi;
-	wire [3:0] clocks_dvi;
-	ecp5pll
-	#(
-	    .in_hz( 25*1000000),
-	  .out0_hz(125*1000000),
-	  .out1_hz( 25*1000000),
-	  .out2_hz( 25*1000000), // not used
-	  .out3_hz( 25*1000000), // not used
-	)
-	pll_dvi_i
-	(
-	  .clk_i(clk_25mhz),
-	  .clk_o(clocks_dvi),
-	  .locked(locked_125mhz)
-	);
-	assign clk_fast_dvi = clocks_dvi[0];
-	assign clk_pix_dvi  = clocks_dvi[1];
-	assign clk_125mhz   = clocks_dvi[0];
 
 	wire hsync_dvi, vsync_dvi, blank_dvi;
 	wire [7:0] r_dvi, g_dvi, b_dvi;
