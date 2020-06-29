@@ -424,8 +424,11 @@ module top
 
 	wire [23:0] trace_addr;
 
+	wire JOY_STRB;
 	wire [1:0] JOY1_DI;
-	wire JOY_STRB, JOY1_CLK, JOY1_P6;
+	wire JOY1_CLK, JOY1_P6;
+	wire [1:0] JOY2_DI = 0;
+	wire JOY2_CLK = 0, JOY2_P6 = 0;
 
 	main main
 	(
@@ -491,12 +494,12 @@ module top
 		.HSYNC(HSYNC),
 		.VSYNC(VSYNC),
 
-		.JOY1_DI(JOY1_DI),
-		.JOY2_DI(1'b1),
 		.JOY_STRB(JOY_STRB),
+		.JOY1_DI(JOY1_DI),
 		.JOY1_CLK(JOY1_CLK),
-		.JOY2_CLK(JOY2_CLK),
 		.JOY1_P6(JOY1_P6),
+		.JOY2_DI(JOY2_DI),
+		.JOY2_CLK(JOY2_CLK),
 		.JOY2_P6(JOY2_P6),
 		.JOY2_P6_in(1'b0),
 		
