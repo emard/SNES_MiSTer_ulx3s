@@ -427,8 +427,8 @@ module top
 	wire JOY_STRB;
 	wire [1:0] JOY1_DI;
 	wire JOY1_CLK, JOY1_P6;
-	wire [1:0] JOY2_DI = 0;
-	wire JOY2_CLK = 0, JOY2_P6 = 0;
+	wire [1:0] JOY2_DI;
+	wire JOY2_CLK, JOY2_P6;
 
 	main main
 	(
